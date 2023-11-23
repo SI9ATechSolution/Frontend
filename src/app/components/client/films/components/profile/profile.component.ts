@@ -10,7 +10,6 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatDialog } from '@angular/material/dialog';
 import { BookTicketComponent } from '../book-ticket/book-ticket.component';
 
-
 @Component({
   selector: 'app-profile',
   templateUrl: './profile.component.html',
@@ -22,6 +21,7 @@ export class ProfileComponent implements OnInit {
   FilmProfile!: Film;
   panelOpenState = false;
   ActorList: any[] = [];
+  url!: string;
 
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -30,7 +30,7 @@ export class ProfileComponent implements OnInit {
     private _servMoviesProfile: FilmsProfileService,
     private route : ActivatedRoute,
     private sanitizer: DomSanitizer,
-    private _dialog: MatDialog,
+    private _dialog: MatDialog
    ){
     this.idPost = this.route.snapshot.paramMap.get('id');
    }
@@ -43,14 +43,22 @@ export class ProfileComponent implements OnInit {
   getMoviebyId(id: number){
     this._servMoviesProfile.getMoviebyId(id).subscribe((res) => {
       this.FilmProfile = res;
+      this.getSafeTrailerUrl();
     }, (err) => { console.log(err); }
     );
   }
 
   getSafeTrailerUrl() {
-    return this.sanitizer.bypassSecurityTrustResourceUrl(this.FilmProfile.trailer);
+    this.url = this.FilmProfile.trailer;
+    if (this.url.startsWith('https://www.youtube.com/watch?v=')) {
+      this.url = this.url.replace('https://www.youtube.com/watch?v=', 'https://www.youtube.com/embed/');
+    } else if (this.url.startsWith('https://youtu.be')) {
+      var temp = this.url.split('?si=');
+      this.url = temp[0];
+      this.url = this.url.replace('https://youtu.be/', 'https://www.youtube.com/embed/');
+    }
+    return this.sanitizer.bypassSecurityTrustResourceUrl(this.url);
   } 
-  
 
   // Detalles de la pelicula
   getActorListbyFilmId(Film_id: number) {
@@ -63,6 +71,5 @@ export class ProfileComponent implements OnInit {
     }, (err) => { console.log(err); }
     );
   }
-
 }
 
